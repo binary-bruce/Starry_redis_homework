@@ -145,6 +145,10 @@ impl TcpSocket {
             // TODO: check remote addr unreachable
             let remote_endpoint = from_core_sockaddr(remote_addr);
             let bound_endpoint = self.bound_endpoint()?;
+
+            // collect the tcp ports
+            (TCP_LINKS.lock().borrow_mut() as &mut Vec<(u16, u16)>).push((bound_endpoint.port, remote_endpoint.port));
+
             #[cfg(not(feature = "ip"))]
             let iface = &super::ETH0.iface;
 
@@ -167,9 +171,6 @@ impl TcpSocket {
                         socket.remote_endpoint().unwrap(),
                     ))
                 })?;
-
-            // collect the tcp ports
-            (TCP_LINKS.lock().borrow_mut() as &mut Vec<(u16, u16)>).push((local_endpoint.port, remote_endpoint.port));
 
             unsafe {
                 // SAFETY: no other threads can read or write these fields as we
