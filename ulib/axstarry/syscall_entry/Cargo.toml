@@ -72,6 +72,7 @@ syscall_task = ["dep:syscall_task"]
 axfeat = { path = "../../../api/axfeat" }
 arceos_api = { path = "../../../api/arceos_api" }
 axlog = { path = "../../../modules/axlog" }
+axnet = { path = "../../../modules/axnet" }
 axruntime = { path = "../../../modules/axruntime" }
 axhal = { path = "../../../modules/axhal" }
 axtask = { path = "../../../modules/axtask" }

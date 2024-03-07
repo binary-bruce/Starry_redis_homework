@@ -466,6 +466,7 @@ dependencies = [
  "log",
  "smoltcp",
  "spin 0.9.8",
+ "spinlock",
 ]
 
 [[package]]
@@ -1923,6 +1924,7 @@ dependencies = [
  "axfeat",
  "axhal",
  "axlog",
+ "axnet",
  "axprocess",
  "axruntime",
  "axsignal",

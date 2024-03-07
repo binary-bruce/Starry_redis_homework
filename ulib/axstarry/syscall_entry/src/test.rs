@@ -4,9 +4,10 @@ use alloc::format;
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use axnet::TcpSocket;
 use axhal::arch::{flush_tlb, write_page_table_root};
 use axhal::KERNEL_PROCESS_ID;
-use axlog::info;
+use axlog::{error, info};
 use axprocess::link::{create_link, FilePath};
 use axprocess::{wait_pid, yield_now_task, PID2PC};
 use axruntime::KERNEL_PAGE_TABLE;
@@ -433,6 +434,13 @@ impl TestResult {
 
     /// 完成了所有测例之后，打印测试结果
     pub fn show_result(&self) {
+        let tcp_links: &Vec<(u16, u16)> = &TcpSocket::tcp_links();
+        error!("total built {} tcp link(s)", tcp_links.len());
+
+        for port in tcp_links.iter() {
+            error!("tcp link src_port:{} dst_port:{}", port.0, port.1);
+        }
+
         info!(
             " --------------- all test ended, passed {} / {} --------------- ",
             self.accepted, self.sum
