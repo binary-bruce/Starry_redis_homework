@@ -12,6 +12,11 @@ use smoltcp::iface::SocketHandle;
 use smoltcp::socket::tcp::{self, ConnectError, State};
 use smoltcp::wire::{IpEndpoint, IpListenEndpoint};
 
+use alloc::vec::Vec;
+use core::borrow::Borrow;
+use core::borrow::BorrowMut;
+use spinlock::SpinNoIrq;
+
 use super::addr::{from_core_sockaddr, into_core_sockaddr, is_unspecified, UNSPECIFIED_ENDPOINT};
 use super::{SocketSetWrapper, LISTEN_TABLE, SOCKET_SET};
 
@@ -48,6 +53,16 @@ pub struct TcpSocket {
 unsafe impl Sync for TcpSocket {}
 
 impl TcpSocket {
+    /// Get the TCP links
+    pub fn tcp_links() -> Vec<(u16, u16)> {
+        let mut ports = Vec::new();
+        for port in (TCP_LINKS.lock().borrow() as &Vec<(u16, u16)>).iter() {
+            ports.push(*port);
+        }
+
+        ports
+    }
+
     /// Creates a new TCP socket.
     pub const fn new() -> Self {
         Self {
@@ -130,6 +145,10 @@ impl TcpSocket {
             // TODO: check remote addr unreachable
             let remote_endpoint = from_core_sockaddr(remote_addr);
             let bound_endpoint = self.bound_endpoint()?;
+
+            // collect the tcp ports
+            (TCP_LINKS.lock().borrow_mut() as &mut Vec<(u16, u16)>).push((bound_endpoint.port, remote_endpoint.port));
+
             #[cfg(not(feature = "ip"))]
             let iface = &super::ETH0.iface;
 
@@ -152,6 +171,7 @@ impl TcpSocket {
                         socket.remote_endpoint().unwrap(),
                     ))
                 })?;
+
             unsafe {
                 // SAFETY: no other threads can read or write these fields as we
                 // have changed the state to `BUSY`.
@@ -666,3 +686,5 @@ fn get_ephemeral_port() -> AxResult<u16> {
     }
     ax_err!(AddrInUse, "no avaliable ports!")
 }
+
+pub static TCP_LINKS: SpinNoIrq<Vec<(u16, u16)>> = SpinNoIrq::new(Vec::new());
